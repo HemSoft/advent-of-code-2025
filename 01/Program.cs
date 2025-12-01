@@ -29,11 +29,14 @@ var part2 = rotations.Aggregate((Pos: 50, Count: 0), (state, r) =>
 
     // Solve for first k where we land on 0.
     // pos + k*dirStep ≡ 0 (mod 100) -> k ≡ (-pos * dirStep) (mod 100)
-    var k0 = Mod100((-pos * dirStep));
+    // If k0 = 0, we're at position 0, so next hit is at step 100.
+    var k0 = Mod100(-pos * dirStep);
+    if (k0 == 0)
+        k0 = 100;
 
     // We only care about steps in the range [1, steps].
     long addedHits = 0;
-    if (k0 > 0 && k0 <= steps)
+    if (k0 <= steps)
     {
         // Total hits = 1 + number of additional hits every 100 steps.
         addedHits = 1 + (steps - k0) / 100;
