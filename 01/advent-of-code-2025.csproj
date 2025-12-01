@@ -6,6 +6,18 @@
     <RootNamespace>advent_of_code_2025</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>9999</WarningLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.4.0.108396">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>
