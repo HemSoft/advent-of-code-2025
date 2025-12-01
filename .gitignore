@@ -384,6 +384,8 @@ MSBuild_Logs/
 # Visual Studio History (VSHistory) files
 .vshistory/
 
+# Advent of Code: don't commit puzzle inputs (unique per user)
+**/input*.txt
 # BeatPulse healthcheck temp database
 healthchecksdb
 
@@ -416,3 +418,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+input.txt
