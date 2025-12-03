@@ -1,0 +1,1 @@
+cargo run --release 2>$null

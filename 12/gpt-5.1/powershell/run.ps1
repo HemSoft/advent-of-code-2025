@@ -1,0 +1,1 @@
+& "$PSScriptRoot/solution.ps1"
