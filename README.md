@@ -1,12 +1,12 @@
 # Advent of Code 2025
 
-Comparing LLM solutions across 3 models and 6 languages.
+Comparing LLM solutions across 3 models and 8 languages.
 
 ## Structure
 
-- **12 days** × **3 models** × **6 languages** = 216 solution folders
+- **12 days** × **3 models** × **8 languages** = 288 solution folders
 - Models: Claude Opus 4.5, Gemini 3.0 Pro, GPT-5.1
-- Languages: C#/.NET 10, Go, PowerShell, Python, Rust, TypeScript
+- Languages: C#/.NET 10, Elixir, Go, PowerShell, Python, Rhombus, Rust, TypeScript
 
 ## Running Solutions
 

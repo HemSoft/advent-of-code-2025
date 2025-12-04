@@ -9,3 +9,4 @@
 | rust       | 995    |        |
 | elixir     | 995    |        |
 | python     | 995    |        |
+| rhombus    |        |        |

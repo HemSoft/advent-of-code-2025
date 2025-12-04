@@ -20,10 +20,12 @@ Advent of Code is a yearly programming puzzle competition running December 1-25.
     typescript/
     rust/
     python/
+    elixir/
+    rhombus/
   gemini-3.0-pro/
-    (same 6 language folders)
+    (same 8 language folders)
   gpt-5.1/
-    (same 6 language folders)
+    (same 8 language folders)
 02/
 ...
 12/
@@ -38,7 +40,7 @@ Three LLM models implement each puzzle independently:
 
 ## Languages
 
-Each model implements solutions in 7 languages:
+Each model implements solutions in 8 languages:
 - **dotnet** - C# 14 / .NET 10
 - **powershell** - PowerShell 7.x
 - **go** - Go 1.24+
@@ -46,6 +48,7 @@ Each model implements solutions in 7 languages:
 - **rust** - Rust 1.91+
 - **python** - Python 3.12+
 - **elixir** - Elixir 1.18+ (Mix project)
+- **rhombus** - Rhombus (Racket-based)
 
 ## File Conventions
 
@@ -58,6 +61,7 @@ Each model implements solutions in 7 languages:
 | rust | `Cargo.toml`, `src/main.rs` | `run.ps1` |
 | python | `solution.py` | `run.ps1` |
 | elixir | `mix.exs`, `lib/day_XX.ex` | `run.ps1` |
+| rhombus | `solution.rhm` | `run.ps1` |
 
 Input file location: `input.txt` (same level as prompt files, copied to language folder when running)
 
@@ -81,7 +85,7 @@ Input file location: `input.txt` (same level as prompt files, copied to language
 
 1. User pastes puzzle into `CHALLENGE-PART1.md`
 2. User selects a model and asks it to follow `prompt-part1.md` for a specific model folder
-3. Model implements all 6 language solutions
+3. Model implements all 8 language solutions
 4. Repeat for other models
 5. After Part 1 is correct, repeat with `prompt-part2.md`
 
@@ -109,3 +113,4 @@ These scripts in the repo root regenerate skeleton projects (skips existing):
 - `scaffold-rust.ps1`
 - `scaffold-typescript.ps1`
 - `scaffold-elixir.ps1`
+- `scaffold-rhombus.ps1`

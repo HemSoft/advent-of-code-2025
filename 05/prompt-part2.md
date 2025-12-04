@@ -4,11 +4,11 @@ Read `CHALLENGE-PART2.md` for the puzzle description.
 
 ## Task
 
-1. Extend the existing solutions in all 6 languages to also solve Part 2.
+1. Extend the existing solutions in all 8 languages to also solve Part 2.
 2. Keep Part 1 output and add Part 2 output.
 3. Output format: `Day 05 Part 2: {answer}`
 4. Test against the example data in the challenge before running with the real input.
-5. Run all 6 solutions and update `solution-{model}.md` with Part 2 results.
+5. Run all 8 solutions and update `solution-{model}.md` with Part 2 results.
 
 ## Notes
 
