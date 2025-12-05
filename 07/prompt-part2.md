@@ -16,6 +16,10 @@ Read `CHALLENGE-PART2.md` for the puzzle description.
 - Update each existing solution file, do not create new files.
 - Update the Part 2 column in the results table in `solution-{model}.md`.
 
+## Tools
+
+If you're unsure about language syntax, library APIs, or implementation patterns, use documentation lookup tools (Context7), fetch official docs from the web, or search GitHub for examples.
+
 ## DO NOT
 
 Check in or commit or push any code to the repository.
