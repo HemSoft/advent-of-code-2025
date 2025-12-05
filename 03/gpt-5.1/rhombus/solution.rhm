@@ -1,14 +1,74 @@
 #lang rhombus/static
 
+fun max_joltage_part1(line :: String):
+  def n = String.length(line)
+  if n < 2
+  | 0
+  | def mutable max_j = 0
+    for (i: 0 .. (n - 1)):
+      def tens_digit = line[i].to_int() - 48
+      def mutable max_units = 0
+      for (j: (i + 1) .. n):
+        def units_digit = line[j].to_int() - 48
+        when units_digit > max_units
+        | max_units := units_digit
+      def joltage = tens_digit * 10 + max_units
+      when joltage > max_j
+      | max_j := joltage
+    max_j
+
+fun max_k_digits(line :: String, k):
+  def mutable current_pos = 0
+  def mutable result_str :: String = ""
+  def len = String.length(line)
+
+  for (pos: 0 .. k):
+    def remaining = k - pos - 1
+    def limit = len - 1 - remaining
+
+    def mutable chosen_digit :: Char = "0"[0]
+    def mutable chosen_index = -1
+
+    for (step: 0 .. 10):
+      def d = 9 - step
+      def target_str = to_string(d)
+      def target_char :: Char = target_str[0]
+      def mutable last_index = -1
+
+      for (i: current_pos .. len):
+        def c = line[i]
+        when c == target_char
+        | last_index := i
+
+      when chosen_index == -1
+      | when last_index != -1
+        | when last_index <= limit
+          | chosen_digit := target_char
+            chosen_index := last_index
+
+    when chosen_index == -1
+    | chosen_digit := line[current_pos]
+      chosen_index := current_pos
+
+    result_str := result_str ++ to_string(chosen_digit)
+    current_pos := chosen_index + 1
+
+  result_str.to_int()
+
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("../python/input.txt")
 
-  // Part 1
-  def part1 = 0
-  println("Day 03 Part 1: " ++ to_string(part1))
+  def mutable total_part1 = 0
+  def mutable total_part2 = 0
 
-  // Part 2
-  def part2 = 0
-  println("Day 03 Part 2: " ++ to_string(part2))
+  for (line in lines):
+    def s = String.trim(line)
+    if s != ""
+    | total_part1 := total_part1 + max_joltage_part1(s)
+      total_part2 := total_part2 + max_k_digits(s, 12)
+    | #void
+
+  println("Day 03 Part 1: " ++ to_string(total_part1))
+  println("Day 03 Part 2: " ++ to_string(total_part2))
 
 main()

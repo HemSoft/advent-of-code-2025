@@ -39,3 +39,7 @@ Create `solution-{model}.md` in the day folder with a results table:
 - **python**: Update `solution.py`
 - **elixir**: Update `lib/day_XX.ex`
 - **rhombus**: Update `solution.rhm`
+
+## DO NOT
+
+Check in or commit or push any code to the repository.

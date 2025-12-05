@@ -1,14 +1,68 @@
 #lang rhombus/static
 
+fun is_invalid_part1(num :: Int) :: Boolean:
+  def s = to_string(num)
+  def len = s.length()
+  if len mod 2 != 0
+  | #false
+  | def half = len div 2
+    s.substring(0, half) == s.substring(half, len)
+
+fun is_invalid_part2(num :: Int) :: Boolean:
+  def s = to_string(num)
+  def len = s.length()
+  def mutable found = #false
+  for (pat_len in 1 .. (len div 2 + 1)):
+    when !found && len mod pat_len == 0
+    | def reps = len div pat_len
+      when reps >= 2
+      | def pat = s.substring(0, pat_len)
+        def mutable is_repeated = #true
+        for (i in 1 .. reps):
+          when is_repeated
+          | def start_idx = i * pat_len
+            def chunk = s.substring(start_idx, start_idx + pat_len)
+            when chunk != pat
+            | is_repeated := #false
+        when is_repeated
+        | found := #true
+  found
+
+fun find_dash(s :: String) :: Int:
+  def mutable idx = -1
+  for (i in 0 .. s.length()):
+    when idx == -1 && s.get(i) == #{#\-}
+    | idx := i
+  idx
+
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def input = filesystem.read_string("input.txt").trim()
+  def parts = input.split(",")
 
   // Part 1
-  def part1 = 0
+  def mutable part1 = 0
+  for (part in parts):
+    when part.length() > 0
+    | def dash_idx = find_dash(part)
+      when dash_idx > 0
+      | def start_num = part.substring(0, dash_idx).to_int()
+        def end_num = part.substring(dash_idx + 1, part.length()).to_int()
+        for (id in start_num .. (end_num + 1)):
+          when is_invalid_part1(id)
+          | part1 := part1 + id
   println("Day 02 Part 1: " ++ to_string(part1))
 
   // Part 2
-  def part2 = 0
+  def mutable part2 = 0
+  for (part in parts):
+    when part.length() > 0
+    | def dash_idx = find_dash(part)
+      when dash_idx > 0
+      | def start_num = part.substring(0, dash_idx).to_int()
+        def end_num = part.substring(dash_idx + 1, part.length()).to_int()
+        for (id in start_num .. (end_num + 1)):
+          when is_invalid_part2(id)
+          | part2 := part2 + id
   println("Day 02 Part 2: " ++ to_string(part2))
 
 main()

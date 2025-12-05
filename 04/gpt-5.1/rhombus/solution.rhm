@@ -1,0 +1,91 @@
+#lang rhombus
+
+import:
+  rhombus/meta open
+  lib("racket/base.rkt") as base
+
+// Count adjacent rolls at position (r, c)
+fun count_adjacent(grid, rows, cols, r, c):
+  def dx = [-1, -1, -1, 0, 0, 1, 1, 1]
+  def dy = [-1, 0, 1, -1, 1, -1, 0, 1]
+  def mutable count = 0
+  for (d in 0..8):
+    def nr = r + dx[d]
+    def nc = c + dy[d]
+    when nr >= 0 && nr < rows && nc >= 0 && nc < cols
+    | def row = grid[nr]
+      when row[nc] == Char"@"
+      | count := count + 1
+  count
+
+fun main():
+  def lines = filesystem.read_lines("input.txt")
+
+  // Filter non-empty lines and convert to list of character arrays
+  def grid_list:
+    for List:
+      each line in lines
+      keep_when line.length() > 0
+      line
+
+  def rows = grid_list.length()
+  def cols = if rows > 0 | grid_list[0].length() | 0
+
+  // Part 1: Count rolls with fewer than 4 adjacent rolls
+  def mutable part1 = 0
+  for (r in 0..rows):
+    for (c in 0..cols):
+      def row = grid_list[r]
+      when row[c] == Char"@"
+      | def adjacent = count_adjacent(grid_list, rows, cols, r, c)
+        when adjacent < 4
+        | part1 := part1 + 1
+
+  println("Day 04 Part 1: " ++ to_string(part1))
+
+  // Part 2: Iteratively remove accessible rolls until none remain
+  // Create a mutable grid
+  def mutable_grid = MutableList()
+  for (r in 0..rows):
+    def row_chars = MutableList()
+    def row = grid_list[r]
+    for (c in 0..cols):
+      row_chars.add(row[c])
+    mutable_grid.add(row_chars)
+
+  // Use recursion instead of while loop
+  fun remove_round(total):
+    // Find all removable rolls this round
+    def to_remove = MutableList()
+    for (r in 0..rows):
+      for (c in 0..cols):
+        def row = mutable_grid[r]
+        when row[c] == Char"@"
+        | def mutable adjacent = 0
+          def dx = [-1, -1, -1, 0, 0, 1, 1, 1]
+          def dy = [-1, 0, 1, -1, 1, -1, 0, 1]
+          for (d in 0..8):
+            def nr = r + dx[d]
+            def nc = c + dy[d]
+            when nr >= 0 && nr < rows && nc >= 0 && nc < cols
+            | def neighbor_row = mutable_grid[nr]
+              when neighbor_row[nc] == Char"@"
+              | adjacent := adjacent + 1
+          when adjacent < 4
+          | to_remove.add([r, c])
+
+    if to_remove.length() == 0
+    | total  // Return final total
+    | // Remove all found rolls
+      for (pos in to_remove):
+        def pr = pos[0]
+        def pc = pos[1]
+        def row = mutable_grid[pr]
+        row[pc] := Char"."
+      remove_round(total + to_remove.length())
+
+  def part2 = remove_round(0)
+
+  println("Day 04 Part 2: " ++ to_string(part2))
+
+main()

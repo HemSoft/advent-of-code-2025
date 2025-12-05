@@ -1,14 +1,50 @@
 #lang rhombus/static
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  let input_str =
+    try:
+      let p = Port.Input.open_file("input.txt")
+      let s = p.read_string()
+      p.close()
+      s
+    catch:
+      ""
 
-  // Part 1
-  def part1 = 0
+  let lines = input_str.split("\n")
+
+  let mutable pos = 50
+  let mutable part1 = 0
+  let mutable part2 = 0
+
+  for line in lines:
+    let s = line.trim()
+    if s != "":
+      let dir = s[0]
+      let dist_str = s.substring(1)
+      let dist = Int.parse(dist_str)
+
+      // Part 2 Logic
+      let dist_to_0 =
+        if dir == "L"[0]
+        | if pos == 0 | 100 | pos
+        | 100 - pos
+
+      if dist >= dist_to_0
+      | part2 := part2 + 1 + (dist - dist_to_0) div 100
+      | #void
+
+      // Move
+      if dir == "L"[0]
+      | pos := (pos - dist) rem 100
+        if pos < 0 | pos := pos + 100 | #void
+      | pos := (pos + dist) rem 100
+
+      // Part 1 Logic
+      if pos == 0
+      | part1 := part1 + 1
+      | #void
+
   println("Day 01 Part 1: " ++ to_string(part1))
-
-  // Part 2
-  def part2 = 0
   println("Day 01 Part 2: " ++ to_string(part2))
 
 main()

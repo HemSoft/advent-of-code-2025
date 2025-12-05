@@ -1,14 +1,46 @@
 #lang rhombus/static
 
+fun solve(line :: String, k):
+  let mutable current_pos = 0
+  let mutable result_str :: String = ""
+  let len = String.length(line)
+
+  for (step: 0 .. k):
+    let needed = k - step
+    let search_end = len - needed
+    let mutable max_digit :: Char = "0"[0]
+    let mutable found_index = -1
+
+    for (i: current_pos .. search_end + 1):
+      let c = line[i]
+      if c > max_digit
+      | max_digit := c
+        found_index := i
+      | #void
+
+    result_str := result_str ++ to_string(max_digit)
+    current_pos := found_index + 1
+
+  result_str.to_int()
+
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  let p = Port.Input.open_file("input.txt")
+  let input_str = p.read_string(10000000)
+  p.close()
 
-  // Part 1
-  def part1 = 0
-  println("Day 03 Part 1: " ++ to_string(part1))
+  let lines = String.split(input_str, "\n")
 
-  // Part 2
-  def part2 = 0
-  println("Day 03 Part 2: " ++ to_string(part2))
+  let mutable total_part1 = 0
+  let mutable total_part2 = 0
+
+  for (line: lines):
+    let s = String.trim(line)
+    if s != ""
+    | total_part1 := total_part1 + solve(s, 2)
+      total_part2 := total_part2 + solve(s, 12)
+    | #void
+
+  println("Day 03 Part 1: " ++ to_string(total_part1))
+  println("Day 03 Part 2: " ++ to_string(total_part2))
 
 main()

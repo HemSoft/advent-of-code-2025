@@ -1,0 +1,88 @@
+#lang rhombus/static
+
+fun solve_part1(lines :: List.of(String)):
+  def height = List.length(lines)
+  def width = String.length(lines[0])
+
+  fun get_char(r, c):
+    if r >= 0 && r < height && c >= 0 && c < width
+    | lines[r][c]
+    | Char"."
+
+  fun count_neighbors(r, c):
+    def dirs = [[-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]]
+    def mutable count = 0
+    for (dir in dirs):
+      def nr = r + dir[0]
+      def nc = c + dir[1]
+      when get_char(nr, nc) == Char"@"
+      | count := count + 1
+    count
+
+  def mutable accessible_count = 0
+  for (r in 0..height):
+    for (c in 0..width):
+      when get_char(r, c) == Char"@"
+      | when count_neighbors(r, c) < 4
+        | accessible_count := accessible_count + 1
+
+  accessible_count
+
+fun solve_part2(lines :: List.of(String)):
+  def height = List.length(lines)
+  def width = String.length(lines[0])
+
+  // Create a mutable grid
+  def grid :: MutableList.now_of(MutableList.now_of(Char)) = MutableList()
+  for (r in 0..height):
+    def row :: MutableList.now_of(Char) = MutableList()
+    for (c in 0..width):
+      row.add(lines[r][c])
+    grid.add(row)
+
+  fun get_char(r, c):
+    if r >= 0 && r < height && c >= 0 && c < width
+    | (grid[r] :~ MutableList.now_of(Char))[c]
+    | Char"."
+
+  fun count_neighbors(r, c):
+    def dirs = [[-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]]
+    def mutable count = 0
+    for (dir in dirs):
+      def nr = r + dir[0]
+      def nc = c + dir[1]
+      when get_char(nr, nc) == Char"@"
+      | count := count + 1
+    count
+
+  def mutable total_removed = 0
+
+  fun loop():
+    def mutable to_remove :: List.of(List) = []
+    for (r in 0..height):
+      for (c in 0..width):
+        when (grid[r] :~ MutableList.now_of(Char))[c] == Char"@"
+        | when count_neighbors(r, c) < 4
+          | to_remove := List.add(to_remove, [r, c])
+
+    when List.length(to_remove) > 0
+    | total_removed := total_removed + List.length(to_remove)
+      for (pos in to_remove):
+        (grid[pos[0]] :~ MutableList.now_of(Char))[pos[1]] := Char"."
+      loop()
+
+  loop()
+  total_removed
+
+fun main():
+  def input_content = Port.Input.open_file("input.txt").read_string(100000)
+  def lines = (input_content :~ String).split("\n").map(fun(s :: String): s.trim()).filter(~keep: fun(s :: String): String.length(s) > 0)
+
+  println("Day 04 Part 1: " ++ to_string(solve_part1(lines)))
+  println("Day 04 Part 2: " ++ to_string(solve_part2(lines)))
+
+main()

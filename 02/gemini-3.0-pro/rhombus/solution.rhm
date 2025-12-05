@@ -1,14 +1,58 @@
 #lang rhombus/static
 
+fun is_valid_part1(s :: String) :: Boolean:
+  let n = s.length()
+  if (n rem 2) != 0
+  | #false
+  | let half = n div 2
+    let first = s.substring(0, half)
+    let second = s.substring(half, n)
+    first == second
+
+fun check_repetition(s :: String, len :: Int, k :: Int) :: Boolean:
+  let n = s.length()
+  if k * len >= n
+  | #true
+  | let start_idx = k * len
+    if s.substring(start_idx, start_idx + len) == s.substring(0, len)
+    | check_repetition(s, len, k + 1)
+    | #false
+
+fun is_valid_part2(s :: String) :: Boolean:
+  let n = s.length()
+  let mutable found = #false
+  for (len: 1 .. (n div 2) + 1):
+    if !found && (n rem len) == 0
+    | if check_repetition(s, len, 1)
+      | found := #true
+      | #void
+    | #void
+  found
+
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  let p = Port.Input.open_file("input.txt")
+  let input_str = p.read_string(1000000)
+  p.close()
 
-  // Part 1
-  def part1 = 0
-  println("Day 02 Part 1: " ++ to_string(part1))
+  let ranges = String.split(String.trim(input_str), ",")
+  let mutable part1_sum = 0
+  let mutable part2_sum = 0
 
-  // Part 2
-  def part2 = 0
-  println("Day 02 Part 2: " ++ to_string(part2))
+  for (range_str: ranges):
+    let parts = range_str.split("-")
+    let start = parts[0].to_int()
+    let end = parts[1].to_int()
+
+    for (num: start .. end + 1):
+      let s = to_string(num)
+      if is_valid_part1(s)
+      | part1_sum := part1_sum + num
+      | #void
+      if is_valid_part2(s)
+      | part2_sum := part2_sum + num
+      | #void
+
+  println("Day 02 Part 1: " ++ to_string(part1_sum))
+  println("Day 02 Part 2: " ++ to_string(part2_sum))
 
 main()

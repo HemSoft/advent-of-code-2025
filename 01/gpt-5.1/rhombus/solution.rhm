@@ -1,14 +1,37 @@
 #lang rhombus/static
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
 
-  // Part 1
-  def part1 = 0
+  def mutable position = 50
+  def mutable part1 = 0
+  def mutable part2 = 0
+
+  for (line in lines):
+    def s = line.trim()
+    when s.length() > 0
+    | def dir = s.substring(0, 1)
+      def distance = s.substring(1..).to_int()
+
+      # Part 2: count every click that lands on 0
+      def steps_to_zero =
+        if dir == "L"
+        | if position == 0 | 100 | position
+        | if position == 0 | 100 | 100 - position
+
+      when distance >= steps_to_zero
+      | part2 := part2 + 1 + (distance - steps_to_zero) div 100
+
+      # Apply rotation for final position (Part 1 logic)
+      def step = distance mod 100
+      if dir == "L"
+      | position := (position - step + 100) mod 100
+      | position := (position + step) mod 100
+
+      when position == 0
+      | part1 := part1 + 1
+
   println("Day 01 Part 1: " ++ to_string(part1))
-
-  // Part 2
-  def part2 = 0
   println("Day 01 Part 2: " ++ to_string(part2))
 
 main()

@@ -39,7 +39,7 @@ main()
         Set-Content -Path (Join-Path $rhmPath "solution.rhm") -Value $solution -NoNewline
 
         # Create run.ps1
-        $run = 'racket solution.rhm'
+        $run = '& "C:\Program Files\Racket\racket.exe" solution.rhm'
         Set-Content -Path (Join-Path $rhmPath "run.ps1") -Value $run -NoNewline
 
         Write-Host "Created $dayStr/$model/rhombus" -ForegroundColor Green

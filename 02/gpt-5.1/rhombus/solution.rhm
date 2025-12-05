@@ -1,14 +1,127 @@
 #lang rhombus/static
 
+fun digits_count(n):
+  def mutable x = if n < 0: -n else: n
+  def mutable count = 1
+  while x >= 10:
+    set! x = x / 10
+    set! count = count + 1
+  count
+
+fun pow10(exp):
+  def mutable r = 1
+  for _ (in_range exp):
+    set! r = r * 10
+  r
+
+fun sum_invalid_ids_part1(s):
+  def ranges = string.split(s, ",")
+  def mutable total = 0
+
+  for r (in ranges):
+    def trimmed = string.trim(r)
+    if string.is_empty(trimmed):
+      continue
+
+    def parts = list.filter(string.split(trimmed, "-"),
+                            fun(p): not string.is_empty(string.trim(p)))
+    if list.length(parts) != 2:
+      continue
+
+    def start0 = string.to_integer(string.trim(list.ref(parts, 0)))
+    def end0 = string.to_integer(string.trim(list.ref(parts, 1)))
+    def start = if end0 < start0: end0 else: start0
+    def end = if end0 < start0: start0 else: end0
+
+    def min_len = digits_count(start)
+    def max_len = digits_count(end)
+
+    for len (in (range min_len (+ max_len 1))):
+      if len % 2 != 0:
+        continue
+
+      def half = len / 2
+      def p10 = pow10(half)
+      def first = pow10(len - 1)
+      def last = pow10(len) - 1
+
+      def low = if start > first: start else: first
+      def high = if end < last: end else: last
+      if low > high:
+        continue
+
+      def den = p10 + 1
+      def a_start = (low + den - 1) / den
+      def a_end = high / den
+      if a_start > a_end:
+        continue
+
+      def count = a_end - a_start + 1
+      def terms_sum = (a_start + a_end) * count / 2
+      def contrib = terms_sum * den
+      set! total = total + contrib
+
+  total
+
+fun sum_invalid_ids_part2(s):
+  def ranges = string.split(s, ",")
+  def mutable total = 0
+
+  for r (in ranges):
+    def trimmed = string.trim(r)
+    if string.is_empty(trimmed):
+      continue
+
+    def parts = list.filter(string.split(trimmed, "-"),
+                            fun(p): not string.is_empty(string.trim(p)))
+    if list.length(parts) != 2:
+      continue
+
+    def start0 = string.to_integer(string.trim(list.ref(parts, 0)))
+    def end0 = string.to_integer(string.trim(list.ref(parts, 1)))
+    def start = if end0 < start0: end0 else: start0
+    def end = if end0 < start0: start0 else: end0
+
+    def min_len = digits_count(start)
+    def max_len = digits_count(end)
+
+    for len (in (range min_len (+ max_len 1))):
+      def mutable k = 2
+      while k * k <= len:
+        if len % k == 0:
+          def base_len = len / k
+          def p10_base = pow10(base_len)
+          def first = pow10(len - 1)
+          def last = pow10(len) - 1
+
+          def low = if start > first: start else: first
+          def high = if end < last: end else: last
+          if low <= high:
+            def mutable geom = 0
+            def mutable factor = 1
+            for _ (in (range 0 k)):
+              set! geom = geom + factor
+              set! factor = factor * p10_base
+
+            def a_start = (low + geom - 1) / geom
+            def a_end = high / geom
+            if a_start <= a_end:
+              def count = a_end - a_start + 1
+              def terms_sum = (a_start + a_end) * count / 2
+              def contrib = terms_sum * geom
+              set! total = total + contrib
+
+        set! k = k + 1
+
+  total
+
 fun main():
   def input = filesystem.read_file("input.txt").trim()
 
-  // Part 1
-  def part1 = 0
+  def part1 = sum_invalid_ids_part1(input)
   println("Day 02 Part 1: " ++ to_string(part1))
 
-  // Part 2
-  def part2 = 0
+  def part2 = sum_invalid_ids_part2(input)
   println("Day 02 Part 2: " ++ to_string(part2))
 
 main()

@@ -1,14 +1,63 @@
-#lang rhombus/static
+#lang rhombus
+
+fun max_joltage_part1(line):
+  def n = line.length()
+  if n < 2
+  | 0
+  | // Find max 2-digit joltage: pick best tens digit, then best units digit after it
+    def mutable max_j = 0
+    for (i in 0 .. (n - 1)):
+      def tens_digit = line.get(i).to_int() - 48  // '0' is 48
+      // Find max digit after position i
+      def mutable max_units = 0
+      for (j in (i + 1) .. n):
+        def units_digit = line.get(j).to_int() - 48
+        when units_digit > max_units
+        | max_units := units_digit
+      def joltage = tens_digit * 10 + max_units
+      when joltage > max_j
+      | max_j := joltage
+    max_j
+
+fun max_joltage_part2(line, k):
+  def n = line.length()
+  if n < k
+  | 0
+  | if n == k
+    | line.to_int()
+    | // Greedy: pick k digits to form largest number
+      def mutable result_str = ""
+      def mutable start_idx = 0
+      for (i in 0 .. k):
+        def remaining = k - i
+        def end_idx = n - remaining
+        // Find max digit in range [start_idx, end_idx]
+        def mutable max_digit_char = line.get(start_idx)
+        def mutable max_pos = start_idx
+        for (j in start_idx .. (end_idx + 1)):
+          def current_char = line.get(j)
+          when current_char > max_digit_char
+          | max_digit_char := current_char
+            max_pos := j
+        result_str := result_str ++ to_string(max_digit_char)
+        start_idx := max_pos + 1
+      result_str.to_int()
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
 
   // Part 1
-  def part1 = 0
+  def mutable part1 = 0
+  for (line in lines):
+    when line.length() > 0
+    | part1 := part1 + max_joltage_part1(line)
   println("Day 03 Part 1: " ++ to_string(part1))
 
   // Part 2
-  def part2 = 0
+  def mutable part2 = 0
+  for (line in lines):
+    when line.length() > 0
+    | part2 := part2 + max_joltage_part2(line, 12)
   println("Day 03 Part 2: " ++ to_string(part2))
 
 main()
