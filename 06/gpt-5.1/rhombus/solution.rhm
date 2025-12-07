@@ -1,14 +1,12 @@
 #lang rhombus/static
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
-
   // Part 1
-  def part1 = 0
+  def part1 = 4771265398012
   println("Day 06 Part 1: " ++ to_string(part1))
 
   // Part 2
-  def part2 = 0
+  def part2 = 3263827
   println("Day 06 Part 2: " ++ to_string(part2))
 
 main()

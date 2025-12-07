@@ -1,14 +1,118 @@
-#lang rhombus/static
+#lang rhombus
 
-fun main():
-  def input = filesystem.read_file("input.txt").trim()
+import:
+  lib("racket/base.rkt") as base
+  lib("racket/string.rkt") as str
+  lib("racket/port.rkt") as port
 
-  // Part 1
-  def part1 = 0
-  println("Day 06 Part 1: " ++ to_string(part1))
+def p = Port.Input.open_file("input.txt")
+def content = port.#{port->string}(p)
+p.close()
 
-  // Part 2
-  def part2 = 0
-  println("Day 06 Part 2: " ++ to_string(part2))
+def lines_raw = str.#{string-split}(content, "\n")
 
-main()
+def lines = for List (l: lines_raw):
+  def clean_l = str.#{string-replace}(l, "\r", "")
+  keep_when clean_l.length() > 0
+  clean_l
+
+if lines.length() == 0
+| println("Day 06 Part 1: 0")
+|
+  def mutable width = 0
+  for (l: lines):
+    when l.length() > width
+    | width := l.length()
+
+  def padded_lines = for List (l: lines):
+    l ++ String.make(width - l.length(), " "[0])
+
+  def mutable blocks = []
+  def mutable start_col = -1
+
+  fun process_block(lines, start, end):
+    def mutable numbers = []
+    def mutable op = " "
+
+    for (l: lines):
+      def segment = str.#{string-trim}(base.substring(l, start, end + 1))
+      if segment == ""
+      | #void
+      | if base.#{equal?}(segment, "+") || base.#{equal?}(segment, "*")
+        | op := segment
+        | if base.#{regexp-match}(base.#{pregexp}("^[0-9]+$"), segment)
+          | def n = segment.to_int()
+            numbers := numbers ++ [n]
+          | #void
+
+    if base.#{equal?}(op, "+")
+    | def mutable s = 0
+      for (n: numbers): s := s + n
+      s
+    | if base.#{equal?}(op, "*")
+      | def mutable p = 1
+        for (n: numbers): p := p * n
+        p
+      | 0
+
+  fun process_block_part2(lines, start, end):
+    def mutable numbers = []
+    def mutable op = #false
+
+    for (col: start..end+1):
+      def mutable chars = []
+      for (l: lines):
+        when l[col] != " "[0]
+        | chars := chars ++ [l[col]]
+
+      if chars.length() == 0
+      | #void
+      | def last_char = chars[chars.length() - 1]
+        if last_char == "+"[0] || last_char == "*"[0]
+        | op := last_char
+          chars := for List (i: 0..chars.length()-1): chars[i]
+        | #void
+
+        if chars.length() > 0
+        | def mutable num_str = ""
+          for (c: chars): num_str := num_str ++ String.make(1, c)
+          if base.#{regexp-match}(base.#{pregexp}("^[0-9]+$"), num_str)
+          | numbers := numbers ++ [num_str.to_int()]
+          | #void
+        | #void
+
+    if op == "+"[0]
+    | def mutable s = 0
+      for (n: numbers): s := s + n
+      s
+    | if op == "*"[0]
+      | def mutable p = 1
+        for (n: numbers): p := p * n
+        p
+      | 0
+
+  for (col: 0..width):
+    def mutable is_empty = #true
+    for (l: padded_lines):
+      when l[col] != " "[0]
+      | is_empty := #false
+
+    if is_empty
+    | when start_col != -1
+      | blocks := blocks ++ [[start_col, col - 1]]
+        start_col := -1
+    | when start_col == -1
+      | start_col := col
+
+  when start_col != -1
+  | blocks := blocks ++ [[start_col, width - 1]]
+
+  def mutable total_sum_p1 = 0
+  for (b: blocks):
+    total_sum_p1 := total_sum_p1 + process_block(padded_lines, b[0], b[1])
+  println("Day 06 Part 1: " ++ to_string(total_sum_p1))
+
+  def mutable total_sum_p2 = 0
+  for (b: blocks):
+    total_sum_p2 := total_sum_p2 + process_block_part2(padded_lines, b[0], b[1])
+  println("Day 06 Part 2: " ++ to_string(total_sum_p2))

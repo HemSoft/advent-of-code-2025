@@ -1,0 +1,6 @@
+#lang rhombus
+
+def p = Port.Input.open_file("input.txt")
+def content = p.read_string()
+p.close()
+println(content)

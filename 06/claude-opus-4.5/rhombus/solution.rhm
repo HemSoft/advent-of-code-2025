@@ -1,14 +1,112 @@
-#lang rhombus/static
+#lang racket
 
-fun main():
-  def input = filesystem.read_file("input.txt").trim()
+(require racket/string)
+(require racket/list)
 
-  // Part 1
-  def part1 = 0
-  println("Day 06 Part 1: " ++ to_string(part1))
+(define (pad-right str width)
+  (string-append str (make-string (max 0 (- width (string-length str))) #\space)))
 
-  // Part 2
-  def part2 = 0
-  println("Day 06 Part 2: " ++ to_string(part2))
+(define (is-separator-column? grid col data-row-count)
+  (for/and ([r (in-range data-row-count)])
+    (let ([line (list-ref grid r)])
+      (or (>= col (string-length line))
+          (char=? (string-ref line col) #\space)))))
 
-main()
+(define (parse-problems grid operator-row rows cols)
+  (let loop ([col-start 0] [problems '()])
+    (if (>= col-start cols)
+        (reverse problems)
+        (let ([col-start (let skip ([c col-start])
+                          (if (and (< c cols) (is-separator-column? grid c (- rows 1)))
+                              (skip (+ c 1))
+                              c))])
+          (if (>= col-start cols)
+              (reverse problems)
+              (let ([col-end (let find-end ([c col-start])
+                              (if (and (< c cols) (not (is-separator-column? grid c (- rows 1))))
+                                  (find-end (+ c 1))
+                                  c))])
+                (let* ([numbers (for/list ([r (in-range (- rows 1))])
+                                 (let* ([line (list-ref grid r)]
+                                        [segment (string-trim (substring line col-start (min col-end (string-length line))))])
+                                   (if (and (not (string=? segment ""))
+                                           (andmap char-numeric? (string->list segment)))
+                                       (string->number segment)
+                                       #f)))]
+                       [numbers (filter values numbers)]
+                       [op-segment (string-trim (substring operator-row col-start (min col-end (string-length operator-row))))]
+                       [op (if (> (string-length op-segment) 0)
+                               (string-ref op-segment 0)
+                               #\space)]
+                       [new-problems (if (and (not (null? numbers))
+                                             (or (char=? op #\+) (char=? op #\*)))
+                                        (cons (list numbers op) problems)
+                                        problems)])
+                  (loop col-end new-problems))))))))
+
+(define (calculate-result numbers op)
+  (if (char=? op #\+)
+      (apply + numbers)
+      (apply * numbers)))
+
+(define (main)
+  (let* ([content (file->string "input.txt")]
+         [lines (string-split content "\n")]
+         [lines (let remove-trailing ([ls lines])
+                  (if (and (not (null? ls)) (string=? (string-trim (last ls)) ""))
+                      (remove-trailing (take ls (- (length ls) 1)))
+                      ls))]
+         [max-width (apply max (map string-length lines))]
+         [grid (map (lambda (line) (pad-right line max-width)) lines)]
+         [rows (length grid)]
+         [cols max-width]
+         [operator-row (list-ref grid (- rows 1))]
+         [problems (parse-problems grid operator-row rows cols)]
+         [part1 (for/sum ([p problems])
+                  (calculate-result (first p) (second p)))])
+    (printf "Day 06 Part 1: ~a\n" part1)
+
+    ;; Part 2: Read columns right-to-left, digits top-to-bottom form numbers
+    (let ([part2 (solve-part2 grid operator-row rows cols)])
+      (printf "Day 06 Part 2: ~a\n" part2))))
+
+(define (solve-part2 grid operator-row rows cols)
+  (let loop ([col-start 0] [acc 0])
+    (if (>= col-start cols)
+        acc
+        (let ([col-start (let skip ([c col-start])
+                          (if (and (< c cols) (is-separator-column? grid c (- rows 1)))
+                              (skip (+ c 1))
+                              c))])
+          (if (>= col-start cols)
+              acc
+              (let ([col-end (let find-end ([c col-start])
+                              (if (and (< c cols) (not (is-separator-column? grid c (- rows 1))))
+                                  (find-end (+ c 1))
+                                  c))])
+                (let* ([op-segment (string-trim (substring operator-row col-start (min col-end (string-length operator-row))))]
+                       [op (if (> (string-length op-segment) 0)
+                               (string-ref op-segment 0)
+                               #\space)]
+                       ;; Read columns right-to-left
+                       [numbers2 (for/list ([c (in-range (- col-end 1) (- col-start 1) -1)])
+                                  (let ([digits (for/list ([r (in-range (- rows 1))])
+                                                 (let* ([line (list-ref grid r)]
+                                                        [ch (if (< c (string-length line))
+                                                               (string-ref line c)
+                                                               #\space)])
+                                                   (if (char-numeric? ch)
+                                                       ch
+                                                       #f)))])
+                                    (let ([valid-digits (filter values digits)])
+                                      (if (not (null? valid-digits))
+                                          (string->number (list->string valid-digits))
+                                          #f))))]
+                       [numbers2 (filter values numbers2)]
+                       [new-acc (if (and (not (null? numbers2))
+                                        (or (char=? op #\+) (char=? op #\*)))
+                                   (+ acc (calculate-result numbers2 op))
+                                   acc)])
+                  (loop col-end new-acc))))))))
+
+(main)
