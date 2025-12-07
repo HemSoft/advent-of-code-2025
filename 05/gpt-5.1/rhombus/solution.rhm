@@ -1,14 +1,106 @@
-#lang rhombus/static
+#lang rhombus
+
+import:
+  rhombus/meta open
+
+fun parse_input(lines):
+  def mutable ranges = MutableList()
+  def mutable ids = MutableList()
+
+  def mutable parsing_ranges = #true
+  for (line in lines):
+    def trimmed = line.trim()
+    when trimmed.length() == 0
+    | parsing_ranges := #false
+      continue
+
+    when parsing_ranges
+    | when trimmed.contains("-")
+      | def parts = trimmed.split("-", 2)
+        when parts.length() == 2
+        | def left = parts[0].trim()
+          def right = parts[1].trim()
+          def {ok: ok_s, value: start} = Integer.from_string(left)
+          def {ok: ok_e, value: end} = Integer.from_string(right)
+          when ok_s && ok_e
+          | def s = if end < start | end | start
+            def e = if end < start | start | end
+            ranges.add([s, e])
+      | else
+        parsing_ranges := #false
+        // Fall through to treat this line as an ID
+        def {ok: ok_id, value: id} = Integer.from_string(trimmed)
+        when ok_id
+        | ids.add(id)
+    | else
+      def {ok: ok_id, value: id} = Integer.from_string(trimmed)
+      when ok_id
+      | ids.add(id)
+
+  [ranges.to_list(), ids.to_list()]
+
+fun merge_ranges(ranges):
+  def sorted =
+    for List:
+      each r in ranges
+      sort_by r[0], r[1]
+
+  def mutable merged = MutableList()
+  for (r in sorted):
+    def s = r[0]
+    def e = r[1]
+    when merged.length() == 0
+    | merged.add([s, e])
+    | def last = merged[merged.length() - 1]
+      def last_s = last[0]
+      def last_e = last[1]
+      when s <= last_e + 1
+      | def new_e = if e > last_e | e | last_e
+        merged[merged.length() - 1] := [last_s, new_e]
+      | merged.add([s, e])
+
+  merged.to_list()
+
+fun count_fresh(ids, merged):
+  def mutable total = 0
+  for (id in ids):
+    def mutable is_fresh = #false
+    for (r in merged):
+      def s = r[0]
+      def e = r[1]
+      when id < s
+      | break
+      when id <= e
+      | is_fresh := #true
+        break
+    when is_fresh
+    | total := total + 1
+  total
+
+fun count_all_fresh(merged):
+  def mutable total = 0
+  for (r in merged):
+    def s = r[0]
+    def e = r[1]
+    total := total + (e - s + 1)
+  total
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
 
-  // Part 1
-  def part1 = 0
+  def non_empty_lines:
+    for List:
+      each line in lines
+      keep_when line.trim().length() > 0
+      line
+
+  def [ranges, ids] = parse_input(non_empty_lines)
+  def merged = merge_ranges(ranges)
+
+  def part1 = count_fresh(ids, merged)
   println("Day 05 Part 1: " ++ to_string(part1))
 
-  // Part 2
-  def part2 = 0
+  def part2 = count_all_fresh(merged)
   println("Day 05 Part 2: " ++ to_string(part2))
 
 main()

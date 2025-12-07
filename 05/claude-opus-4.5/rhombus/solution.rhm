@@ -1,14 +1,78 @@
 #lang rhombus/static
 
-fun main():
-  def input = filesystem.read_file("input.txt").trim()
+fun find_dash(s :: String) :: Int:
+  def mutable idx = -1
+  for (i in 0 .. s.length()):
+    when idx == -1 && s.get(i) == #{#\-}
+    | idx := i
+  idx
 
-  // Part 1
-  def part1 = 0
+fun main():
+  def lines = filesystem.read_lines("input.txt")
+
+  // Find separator between ranges and ingredients (blank line)
+  def mutable section = 0  // 0 = ranges, 1 = ingredients
+  def mutable ranges :: List.of(List) = []
+  def mutable ingredients :: List.of(Int) = []
+
+  for (line in lines):
+    if line.length() == 0
+    | section := 1
+    | if section == 0
+      | // Parse range
+        def dash_pos = find_dash(line)
+        def start_val = line.substring(0, dash_pos).to_int()
+        def end_val = line.substring(dash_pos + 1, line.length()).to_int()
+        ranges := ranges ++ [[start_val, end_val]]
+      | // Parse ingredient
+        ingredients := ingredients ++ [line.to_int()]
+
+  // Part 1: Count fresh ingredients
+  def mutable part1 = 0
+  for (id in ingredients):
+    def mutable is_fresh = #false
+    for (range_pair in ranges):
+      def rp :: List = range_pair
+      when !is_fresh && id >= rp[0] && id <= rp[1]
+      | is_fresh := #true
+    when is_fresh
+    | part1 := part1 + 1
+
   println("Day 05 Part 1: " ++ to_string(part1))
 
-  // Part 2
-  def part2 = 0
+  // Part 2: Merge overlapping ranges and count total unique IDs
+  def sorted = List.sort(ranges,
+                         fun (a :: List, b :: List):
+                           def a0 :: Int = a[0]
+                           def b0 :: Int = b[0]
+                           def a1 :: Int = a[1]
+                           def b1 :: Int = b[1]
+                           a0 .< b0 || (a0 == b0 && a1 .< b1))
+
+  def mutable merged :: List.of(List) = []
+  for (range_pair in sorted):
+    def rp :: List = range_pair
+    def start :: Int = rp[0]
+    def end_val :: Int = rp[1]
+    if merged.length() == 0
+    | merged := [[start, end_val]]
+    | def last :: List = merged[merged.length() - 1]
+      def last_end :: Int = last[1]
+      def last_start :: Int = last[0]
+      if last_end .< start - 1
+      | merged := merged ++ [[start, end_val]]
+      | def new_end:
+          if end_val .> last_end
+          | end_val
+          | last_end
+        def new_merged = merged.take(merged.length() - 1)
+        merged := new_merged ++ [[last_start, new_end]]
+
+  def mutable part2 = 0
+  for (range_pair in merged):
+    def rp :: List = range_pair
+    part2 := part2 + (rp[1] - rp[0] + 1)
+
   println("Day 05 Part 2: " ++ to_string(part2))
 
 main()

@@ -1,14 +1,85 @@
 #lang rhombus/static
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  let input_str =
+    try:
+      let p = Port.Input.open_file("input.txt")
+      let s = p.read_string()
+      p.close()
+      s
+    catch:
+      ""
 
-  // Part 1
-  def part1 = 0
+  let lines = input_str.split("\n")
+
+  let mutable ranges = []
+  let mutable ids = []
+  let mutable parsing_ranges = #true
+
+  for line: lines:
+    let s = line.trim()
+    if s == "":
+      if parsing_ranges:
+        parsing_ranges := #false
+      else:
+        #void
+    else:
+      if parsing_ranges:
+        let parts = s.split("-")
+        let start = Int.parse(parts[0])
+        let end = Int.parse(parts[1])
+        ranges := ranges ++ [[start, end]]
+      else:
+        let id = Int.parse(s)
+        ids := ids ++ [id]
+
+  let mutable part1 = 0
+
+  for id: ids:
+    let mutable is_fresh = #false
+    for r: ranges:
+      if id >= r[0] && id <= r[1]:
+        is_fresh := #true
+        break
+      else:
+        #void
+    if is_fresh:
+      part1 := part1 + 1
+    else:
+      #void
+
   println("Day 05 Part 1: " ++ to_string(part1))
 
-  // Part 2
-  def part2 = 0
+  # Part 2
+  ranges := ranges.sort(fun (a, b): a[0] < b[0])
+
+  let mutable merged_ranges = []
+  if ranges.length() > 0:
+    let mutable curr_start = ranges[0][0]
+    let mutable curr_end = ranges[0][1]
+
+    for i: 1..ranges.length():
+      let next_start = ranges[i][0]
+      let next_end = ranges[i][1]
+
+      if next_start <= curr_end + 1:
+        if next_end > curr_end:
+          curr_end := next_end
+        else:
+          #void
+      else:
+        merged_ranges := merged_ranges ++ [[curr_start, curr_end]]
+        curr_start := next_start
+        curr_end := next_end
+
+    merged_ranges := merged_ranges ++ [[curr_start, curr_end]]
+  else:
+    #void
+
+  let mutable part2 = 0
+  for r: merged_ranges:
+    part2 := part2 + (r[1] - r[0] + 1)
+
   println("Day 05 Part 2: " ++ to_string(part2))
 
 main()
