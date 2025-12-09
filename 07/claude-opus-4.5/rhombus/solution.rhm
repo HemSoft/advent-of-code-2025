@@ -1,14 +1,84 @@
 #lang rhombus/static
 
+fun find_start(lines :: List):
+  def rows = lines.length()
+  def mutable result_row = 0
+  def mutable result_col = 0
+  for (r in 0..rows):
+    def line :: String = lines[r]
+    for (c in 0..line.length()):
+      when line.get(c) == #{#\S}
+      | result_row := r
+        result_col := c
+  values(result_row, result_col)
+
+fun simulate_part1(lines :: List, start_row :: Int, start_col :: Int):
+  def rows = lines.length()
+  def first_line :: String = lines[0]
+  def cols = first_line.length()
+
+  def mutable current_beams :: Map = {start_col: #true}
+  def mutable split_count = 0
+
+  for (row in (start_row + 1)..rows):
+    when current_beams.keys().length() > 0
+    | def mutable next_beams :: Map = {}
+      def line :: String = lines[row]
+      for (col in current_beams.keys()):
+        when col >= 0 && col < cols
+        | def cell = line.get(col)
+          if cell == #{#\^}
+          | split_count := split_count + 1
+            when col - 1 >= 0
+            | next_beams := next_beams ++ {col - 1: #true}
+            when col + 1 < cols
+            | next_beams := next_beams ++ {col + 1: #true}
+          | next_beams := next_beams ++ {col: #true}
+      current_beams := next_beams
+
+  split_count
+
+fun simulate_part2(lines :: List, start_row :: Int, start_col :: Int):
+  def rows = lines.length()
+  def first_line :: String = lines[0]
+  def cols = first_line.length()
+  
+  def mutable particle_counts :: Map = {start_col: 1}
+  
+  for (row in (start_row + 1)..rows):
+    when particle_counts.keys().length() > 0
+    | def mutable next_counts :: Map = {}
+      def line :: String = lines[row]
+      for (col in particle_counts.keys()):
+        when col >= 0 && col < cols
+        | def count = particle_counts[col]
+          def cell = line.get(col)
+          if cell == #{#\^}
+          | def left = col - 1
+            def right = col + 1
+            when left >= 0
+            | next_counts := next_counts ++ {left: (if next_counts.has_key(left) | next_counts[left] | 0) + count}
+            when right < cols
+            | next_counts := next_counts ++ {right: (if next_counts.has_key(right) | next_counts[right] | 0) + count}
+          | next_counts := next_counts ++ {col: (if next_counts.has_key(col) | next_counts[col] | 0) + count}
+      particle_counts := next_counts
+  
+  def mutable total = 0
+  for (col in particle_counts.keys()):
+    total := total + particle_counts[col]
+  total
+
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
+
+  def (start_row, start_col) = find_start(lines)
 
   // Part 1
-  def part1 = 0
+  def part1 = simulate_part1(lines, start_row, start_col)
   println("Day 07 Part 1: " ++ to_string(part1))
 
   // Part 2
-  def part2 = 0
+  def part2 = simulate_part2(lines, start_row, start_col)
   println("Day 07 Part 2: " ++ to_string(part2))
 
 main()

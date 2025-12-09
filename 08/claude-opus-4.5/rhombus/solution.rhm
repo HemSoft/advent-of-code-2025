@@ -1,14 +1,113 @@
-#lang rhombus/static
+#lang rhombus
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
 
-  // Part 1
-  def part1 = 0
+  // Parse points
+  def mutable points_list = []
+  for (line in lines):
+    when line.length() > 0
+    | def parts = line.split(",")
+      def x = parts[0].to_int()
+      def y = parts[1].to_int()
+      def z = parts[2].to_int()
+      points_list := points_list ++ [[x, y, z]]
+
+  def points = points_list
+  def n = points.length()
+
+  // Calculate all pairwise distances
+  def mutable pairs_list = []
+  for (i in 0..n):
+    for (j in (i + 1)..n):
+      def p1 = points[i]
+      def p2 = points[j]
+      def dx = p1[0] - p2[0]
+      def dy = p1[1] - p2[1]
+      def dz = p1[2] - p2[2]
+      def dist_sq = dx * dx + dy * dy + dz * dz
+      pairs_list := pairs_list ++ [[dist_sq, i, j]]
+
+  // Sort pairs by distance
+  def pairs = pairs_list.sort(fun (a, b): a[0] < b[0])
+
+  // Union-Find using arrays
+  def parent = Array.make(n, 0)
+  def rank_arr = Array.make(n, 0)
+  for (i in 0..n):
+    parent[i] := i
+
+  fun find(x):
+    if parent[x] == x
+    | x
+    | def root = find(parent[x])
+      parent[x] := root
+      root
+
+  fun unite(x, y):
+    def px = find(x)
+    def py = find(y)
+    if px == py
+    | #false
+    | if rank_arr[px] < rank_arr[py]
+      | parent[px] := py
+      | if rank_arr[px] > rank_arr[py]
+        | parent[py] := px
+        | parent[py] := px
+          rank_arr[px] := rank_arr[px] + 1
+      #true
+
+  // Connect the 1000 shortest pairs for Part 1
+  def connections = if 1000 < pairs.length() | 1000 | pairs.length()
+  for (i in 0..connections):
+    def pair = pairs[i]
+    unite(pair[1], pair[2])
+
+  // Count circuit sizes
+  def mutable sizes_map = {}
+  for (i in 0..n):
+    def root = find(i)
+    def current = if sizes_map.has_key(root) | sizes_map[root] | 0
+    sizes_map := sizes_map ++ {root: current + 1}
+
+  // Get all sizes and sort descending
+  def mutable all_sizes = []
+  for (key in sizes_map.keys()):
+    all_sizes := all_sizes ++ [sizes_map[key]]
+
+  def sorted_sizes = all_sizes.sort(fun (a, b): a > b)
+
+  // Take top 3 and multiply
+  def top_count = if 3 < sorted_sizes.length() | 3 | sorted_sizes.length()
+  def mutable part1 = 1
+  for (i in 0..top_count):
+    part1 := part1 * sorted_sizes[i]
+
   println("Day 08 Part 1: " ++ to_string(part1))
 
-  // Part 2
-  def part2 = 0
+  // Part 2: Reset and find the last connection that unifies all into one circuit
+  for (i in 0..n):
+    parent[i] := i
+    rank_arr[i] := 0
+
+  def mutable num_circuits = n
+  def mutable last_i = -1
+  def mutable last_j = -1
+
+  for (idx in 0..pairs.length()):
+    when num_circuits > 1
+    | def pair = pairs[idx]
+      def i = pair[1]
+      def j = pair[2]
+      when unite(i, j)
+      | num_circuits := num_circuits - 1
+        last_i := i
+        last_j := j
+
+  def x1 = points[last_i][0]
+  def x2 = points[last_j][0]
+  def part2 = x1 * x2
+
   println("Day 08 Part 2: " ++ to_string(part2))
 
 main()

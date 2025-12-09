@@ -1,14 +1,91 @@
-#lang rhombus/static
+#lang rhombus
 
-fun main():
-  def input = filesystem.read_file("input.txt").trim()
+import:
+  lib("racket/base.rkt") as base
+  lib("racket/string.rkt") as str
+  lib("racket/port.rkt") as port
 
-  // Part 1
-  def part1 = 0
-  println("Day 07 Part 1: " ++ to_string(part1))
+fun solve():
+  def p = Port.Input.open_file("input.txt")
+  def content = port.#{port->string}(p)
+  p.close()
 
-  // Part 2
-  def part2 = 0
-  println("Day 07 Part 2: " ++ to_string(part2))
+  let lines_raw = str.#{string-split}(content, "\n")
+  let lines = for List (l: lines_raw):
+    let clean_l = str.#{string-replace}(l, "\r", "")
+    keep_when clean_l.length() > 0
+    clean_l
 
-main()
+  if lines.length() > 0
+  | let width = lines[0].length()
+    let height = lines.length()
+
+    let mutable start_col = -1
+    let mutable start_row = -1
+
+    for (r: 0..height):
+      if start_col == -1
+      | let line = lines[r]
+        for (c: 0..line.length()):
+          if start_col == -1 && line[c] == "S"[0]
+          | start_col := c
+            start_row := r
+          | #void
+      | #void
+
+    if start_col == -1
+    | println("Start not found")
+    | let mutable active_beams = {start_col}
+      let mutable total_splits = 0
+
+      for (r: (start_row + 1)..height):
+        if active_beams.length() > 0
+        | let mutable next_beams = Set{}
+          let line = lines[r]
+
+          for (c: active_beams):
+            if c >= 0 && c < width
+            | let char = line[c]
+              if char == "^"[0]
+              | total_splits := total_splits + 1
+                if c - 1 >= 0
+                | next_beams := next_beams.add(c - 1)
+                | #void
+                if c + 1 < width
+                | next_beams := next_beams.add(c + 1)
+                | #void
+              | next_beams := next_beams.add(c)
+            | #void
+
+          active_beams := next_beams
+        | #void
+
+      println("Day 07 Part 1: " ++ to_string(total_splits))
+
+      let mutable memo = Map{}
+
+      fun count_paths(r, c):
+        if c < 0 || c >= width
+        | 1
+        | let key = to_string(r) ++ "," ++ to_string(c)
+          if memo.has_key(key)
+          | memo[key]
+          | let mutable res = 1
+            let mutable found = #false
+            for (curr_r: (r + 1)..height):
+              if !found
+              | let char = lines[curr_r][c]
+                if char == "^"[0]
+                | found := #true
+                  res := count_paths(curr_r, c - 1) + count_paths(curr_r, c + 1)
+                | #void
+              | #void
+
+            memo := memo ++ {key: res}
+            res
+
+      let part2_ans = count_paths(start_row, start_col)
+      println("Day 07 Part 2: " ++ to_string(part2_ans))
+  | #void
+
+solve()

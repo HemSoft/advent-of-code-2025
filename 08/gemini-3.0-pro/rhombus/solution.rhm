@@ -1,14 +1,105 @@
-#lang rhombus/static
+#lang rhombus
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
+  def mutable points = []
 
-  // Part 1
-  def part1 = 0
-  println("Day 08 Part 1: " ++ to_string(part1))
+  for (line in lines):
+    def s = line.trim()
+    if s != ""
+    | def parts = s.split(",")
+      if parts.length() == 3
+      | def x = parts[0].to_int()
+        def y = parts[1].to_int()
+        def z = parts[2].to_int()
+        points := points ++ [{"x": x, "y": y, "z": z}]
+      | #void
+    | #void
 
-  // Part 2
-  def part2 = 0
-  println("Day 08 Part 2: " ++ to_string(part2))
+  def mutable pairs = []
+  def n = points.length()
+  for (i in 0..n):
+    for (j in (i+1)..n):
+      def p1 = points[i]
+      def p2 = points[j]
+      def dx = p1["x"] - p2["x"]
+      def dy = p1["y"] - p2["y"]
+      def dz = p1["z"] - p2["z"]
+      def dist_sq = dx*dx + dy*dy + dz*dz
+      pairs := pairs ++ [{"dist": dist_sq, "i": i, "j": j}]
+
+  def sorted_pairs = pairs.sort(fun (a, b): a["dist"] < b["dist"])
+
+  def parent = Array.make(n, 0)
+  for (i in 0..n):
+    parent[i] := i
+
+  fun find(i):
+    if parent[i] == i
+    | i
+    | def root = find(parent[i])
+      parent[i] := root
+      root
+
+  fun union(i, j):
+    def root_i = find(i)
+    def root_j = find(j)
+    if root_i != root_j
+    | parent[root_i] := root_j
+    | #void
+
+  def limit = if 1000 < sorted_pairs.length() | 1000 | sorted_pairs.length()
+  for (k in 0..limit):
+    def p = sorted_pairs[k]
+    union(p["i"], p["j"])
+
+  def mutable counts = {}
+  for (i in 0..n):
+    def root = find(i)
+    def c = if counts.has_key(root) | counts[root] | 0
+    counts := counts ++ {root: c + 1}
+
+  def mutable sizes = []
+  for (v in counts.values()):
+    sizes := sizes ++ [v]
+    
+  def sorted_sizes = sizes.sort(fun (a, b): a > b)
+
+  def mutable result = 0
+  if sorted_sizes.length() >= 3
+  | result := sorted_sizes[0] * sorted_sizes[1] * sorted_sizes[2]
+  | if sorted_sizes.length() > 0
+    | result := 1
+      for (s in sorted_sizes):
+        result := result * s
+    | #void
+
+  println("Day 08 Part 1: " ++ to_string(result))
+
+  # Part 2
+  for (i in 0..n):
+    parent[i] := i
+  
+  def mutable num_components = n
+  def mutable part2_result = 0
+  def mutable finished = #false
+
+  for (p in sorted_pairs):
+    if !finished
+    | def i = p["i"]
+      def j = p["j"]
+      def root_i = find(i)
+      def root_j = find(j)
+      if root_i != root_j
+      | parent[root_i] := root_j
+        num_components := num_components - 1
+        if num_components == 1
+        | part2_result := points[i]["x"] * points[j]["x"]
+          finished := #true
+        | #void
+      | #void
+    | #void
+
+  println("Day 08 Part 2: " ++ to_string(part2_result))
 
 main()
