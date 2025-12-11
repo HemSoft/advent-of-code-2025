@@ -1,14 +1,167 @@
-#lang rhombus/static
+#lang rhombus
+
+fun abs(n):
+  if n < 0 | -n | n
+
+fun min(a, b):
+  if a < b | a | b
+
+fun max(a, b):
+  if a > b | a | b
+
+fun on_segment(px, py, x1, y1, x2, y2):
+  if x1 == x2
+  | px == x1 && py >= min(y1, y2) && py <= max(y1, y2)
+  | if y1 == y2
+    | py == y1 && px >= min(x1, x2) && px <= max(x1, x2)
+    | #false
+
+fun inside_polygon(px, py, edges):
+  def mutable crossings = 0
+  for (e in edges):
+    def x1 = e[0][0]
+    def y1 = e[0][1]
+    def x2 = e[1][0]
+    def y2 = e[1][1]
+    when (y1 <= py && y2 > py) || (y2 <= py && y1 > py)
+    | def x_intersect = x1 + (py - y1) * (x2 - x1) / (y2 - y1)
+      when px < x_intersect
+      | crossings := crossings + 1
+  (crossings mod 2) == 1
+
+fun valid_point(px, py, edges, tiles_set):
+  def key = to_string(px) ++ "," ++ to_string(py)
+  if tiles_set.has_key(key)
+  | #true
+  | block:
+      def mutable found = #false
+      for (e in edges):
+        when !found
+        | when on_segment(px, py, e[0][0], e[0][1], e[1][0], e[1][1])
+          | found := #true
+      if found
+      | #true
+      | inside_polygon(px, py, edges)
+
+fun direction(x1, y1, x2, y2, x3, y3):
+  (x3 - x1) * (y2 - y1) - (x2 - x1) * (y3 - y1)
+
+fun segments_intersect(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2):
+  def d1 = direction(bx1, by1, bx2, by2, ax1, ay1)
+  def d2 = direction(bx1, by1, bx2, by2, ax2, ay2)
+  def d3 = direction(ax1, ay1, ax2, ay2, bx1, by1)
+  def d4 = direction(ax1, ay1, ax2, ay2, bx2, by2)
+  ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+
+fun get_intersection(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2):
+  def d = (ax2 - ax1) * (by2 - by1) - (ay2 - ay1) * (bx2 - bx1)
+  if abs(d) < 0.0000000001
+  | #false
+  | def t = ((bx1 - ax1) * (by2 - by1) - (by1 - ay1) * (bx2 - bx1)) / d
+    [ax1 + t * (ax2 - ax1), ay1 + t * (ay2 - ay1)]
+
+fun edge_crosses_rect_interior(x1, y1, x2, y2, min_x, max_x, min_y, max_y):
+  def p1_inside = x1 >= min_x && x1 <= max_x && y1 >= min_y && y1 <= max_y
+  def p2_inside = x2 >= min_x && x2 <= max_x && y2 >= min_y && y2 <= max_y
+  if p1_inside && p2_inside
+  | #false
+  | block:
+      def rect_edges = [[min_x, min_y, max_x, min_y],
+                        [min_x, max_y, max_x, max_y],
+                        [min_x, min_y, min_x, max_y],
+                        [max_x, min_y, max_x, max_y]]
+      def mutable result = #false
+      for (i in 0..4):
+        when !result
+        | def re = rect_edges[i]
+          when segments_intersect(x1, y1, x2, y2, re[0], re[1], re[2], re[3])
+          | def intersect = get_intersection(x1, y1, x2, y2, re[0], re[1], re[2], re[3])
+            when intersect
+            | def ix = intersect[0]
+              def iy = intersect[1]
+              if i < 2
+              | when ix > min_x && ix < max_x
+                | result := #true
+              | when iy > min_y && iy < max_y
+                | result := #true
+      result
+
+fun rectangle_valid(min_x, max_x, min_y, max_y, edges):
+  def mutable valid = #true
+  for (e in edges):
+    when valid
+    | when edge_crosses_rect_interior(e[0][0], e[0][1], e[1][0], e[1][1], min_x, max_x, min_y, max_y)
+      | valid := #false
+  valid
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
-
+  def lines = filesystem.read_lines("input.txt")
+  
+  // Parse tiles
+  def mutable tiles_list = []
+  for (line in lines):
+    when line.length() > 0
+    | def parts = line.split(",")
+      def x = parts[0].to_int()
+      def y = parts[1].to_int()
+      tiles_list := tiles_list ++ [[x, y]]
+  
+  def tiles = tiles_list
+  def len = tiles.length()
+  
   // Part 1
-  def part1 = 0
-  println("Day 09 Part 1: " ++ to_string(part1))
-
+  def mutable max_area = 0
+  for (i in 0..len):
+    for (j in (i + 1)..len):
+      def tile_i = tiles[i]
+      def tile_j = tiles[j]
+      def x1 = tile_i[0]
+      def y1 = tile_i[1]
+      def x2 = tile_j[0]
+      def y2 = tile_j[1]
+      def width = abs(x2 - x1) + 1
+      def height = abs(y2 - y1) + 1
+      def area = width * height
+      when area > max_area
+      | max_area := area
+  
+  println("Day 09 Part 1: " ++ to_string(max_area))
+  
   // Part 2
-  def part2 = 0
-  println("Day 09 Part 2: " ++ to_string(part2))
+  def mutable edges = []
+  for (i in 0..len):
+    def curr = tiles[i]
+    def next_idx = (i + 1) mod len
+    def next = tiles[next_idx]
+    edges := edges ++ [[curr, next]]
+  
+  def mutable tiles_set = {}
+  for (t in tiles):
+    def key = to_string(t[0]) ++ "," ++ to_string(t[1])
+    tiles_set := tiles_set ++ {key: #true}
+  
+  def mutable max_area2 = 0
+  for (i in 0..len):
+    for (j in (i + 1)..len):
+      def t1 = tiles[i]
+      def t2 = tiles[j]
+      def min_x = min(t1[0], t2[0])
+      def max_x = max(t1[0], t2[0])
+      def min_y = min(t1[1], t2[1])
+      def max_y = max(t1[1], t2[1])
+      
+      def corners = [[min_x, min_y], [min_x, max_y], [max_x, min_y], [max_x, max_y]]
+      def mutable all_valid = #true
+      for (c in corners):
+        when all_valid
+        | when !valid_point(c[0], c[1], edges, tiles_set)
+          | all_valid := #false
+      
+      when all_valid && rectangle_valid(min_x, max_x, min_y, max_y, edges)
+      | def area = (max_x - min_x + 1) * (max_y - min_y + 1)
+        when area > max_area2
+        | max_area2 := area
+  
+  println("Day 09 Part 2: " ++ to_string(max_area2))
 
 main()

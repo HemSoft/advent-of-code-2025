@@ -1,14 +1,106 @@
-#lang rhombus/static
+#lang rhombus
+
+fun abs(n):
+  if n < 0 | -n | n
+
+fun min(a, b):
+  if a < b | a | b
+
+fun max(a, b):
+  if a > b | a | b
+
+fun is_point_in_polygon(x, y, edges):
+  def mutable inside = #false
+  for (edge: edges):
+    def p1 = edge[0]
+    def p2 = edge[1]
+    if (p1[1] > y) != (p2[1] > y)
+    | def intersect_x = (p2[0] - p1[0]) * (y - p1[1]) / (p2[1] - p1[1]) + p1[0]
+      if x < intersect_x
+      | inside := !inside
+      | #void
+    | #void
+  inside
+
+fun is_valid(p1, p2, edges):
+  def x1 = min(p1[0], p2[0])
+  def x2 = max(p1[0], p2[0])
+  def y1 = min(p1[1], p2[1])
+  def y2 = max(p1[1], p2[1])
+
+  def cx = (x1 + x2) / 2.0
+  def cy = (y1 + y2) / 2.0
+
+  if !is_point_in_polygon(cx, cy, edges)
+  | #false
+  | def mutable valid = #true
+    for (edge: edges):
+      def ep1 = edge[0]
+      def ep2 = edge[1]
+      if ep1[0] == ep2[0] // Vertical
+      | def ex = ep1[0]
+        def ey_min = min(ep1[1], ep2[1])
+        def ey_max = max(ep1[1], ep2[1])
+        if x1 < ex && ex < x2
+        | def overlap_min = max(y1, ey_min)
+          def overlap_max = min(y2, ey_max)
+          if overlap_min < overlap_max
+          | valid := #false
+          | #void
+        | #void
+      | if ep1[1] == ep2[1] // Horizontal
+        | def ey = ep1[1]
+          def ex_min = min(ep1[0], ep2[0])
+          def ex_max = max(ep1[0], ep2[0])
+          if y1 < ey && ey < y2
+          | def overlap_min = max(x1, ex_min)
+            def overlap_max = min(x2, ex_max)
+            if overlap_min < overlap_max
+            | valid := #false
+            | #void
+          | #void
+        | #void
+    valid
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
 
-  // Part 1
-  def part1 = 0
-  println("Day 09 Part 1: " ++ to_string(part1))
+  def mutable points = []
+  for (line: lines):
+    if line.trim() != ""
+    | def parts = line.split(",")
+      def p = [parts[0].to_int(), parts[1].to_int()]
+      points := points ++ [p]
+    | #void
 
-  // Part 2
-  def part2 = 0
-  println("Day 09 Part 2: " ++ to_string(part2))
+  def mutable edges = []
+  def len = points.length()
+  for (i: 0..len):
+    def p1 = points[i]
+    def p2 = points[(i + 1) mod len]
+    edges := edges ++ [[p1, p2]]
+
+  def mutable max_area_part1 = 0
+  def mutable max_area_part2 = 0
+
+  for (i: 0..len):
+    for (j: (i+1)..len):
+      def p1 = points[i]
+      def p2 = points[j]
+      def width = abs(p1[0] - p2[0]) + 1
+      def height = abs(p1[1] - p2[1]) + 1
+      def area = width * height
+      if area > max_area_part1
+      | max_area_part1 := area
+      | #void
+
+      if is_valid(p1, p2, edges)
+      | if area > max_area_part2
+        | max_area_part2 := area
+        | #void
+      | #void
+
+  println("Day 09 Part 1: " ++ to_string(max_area_part1))
+  println("Day 09 Part 2: " ++ to_string(max_area_part2))
 
 main()

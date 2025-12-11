@@ -1,0 +1,14 @@
+# Day 09 - Claude Opus 4.5
+
+| Language   | Part 1       | Part 2       |
+|------------|--------------|--------------|
+| dotnet     | 4782896435   | 1540060480   |
+| powershell | 4782896435   | 1540060480*  |
+| go         | 4782896435   | 1540060480   |
+| typescript | 4782896435   | 1540060480   |
+| rust       | 4782896435   | 1540060480   |
+| python     | 4782896435   | 1540060480   |
+| elixir     | 4782896435   | 1540060480   |
+| rhombus    | 4782896435   | 1540060480   |
+
+\* PowerShell is slow due to language performance characteristics with nested loops

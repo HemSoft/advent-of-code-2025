@@ -1,14 +1,282 @@
 #lang rhombus/static
 
+fun pow2(n :: Int) :: Int:
+  cond
+  | n == 0: 1
+  | else: 2 * pow2(n-1)
+
+fun solve_machine(line :: String) :: Int:
+  block:
+    let mutable start_bracket = 0
+    let mutable end_bracket = 0
+    
+    for i in 0..line.length():
+      if line[i] == "["[0] | start_bracket := i
+      if line[i] == "]"[0] | end_bracket := i
+      
+    if start_bracket == end_bracket | return 0
+    
+    let target_str = line.substring(start_bracket + 1, end_bracket)
+    let L = target_str.length()
+    let target = Array.make(L, 0)
+    for i in 0..L:
+      if target_str[i] == "#"[0] | target[i] := 1
+      
+    let mutable buttons = []
+    let parts = line.split("(")
+    
+    for i in 1..parts.length():
+      let p = parts[i]
+      let mutable end_paren = -1
+      for j in 0..p.length():
+        if p[j] == ")"[0] | end_paren := j
+        
+      if end_paren != -1
+      | let nums_str = p.substring(0, end_paren)
+        let b = Array.make(L, 0)
+        let nums = nums_str.split(",")
+        for n_str in nums:
+          let n = try: Int.parse(n_str) catch: -1
+          if n >= 0 && n < L | b[n] := 1
+        buttons := buttons.append([b])
+        
+    let B = buttons.length()
+    
+    let M = Array.make(L, fun (r): Array.make(B + 1, 0))
+    for r in 0..L:
+      for c in 0..B:
+        M[r][c] := buttons[c][r]
+      M[r][B] := target[r]
+      
+    let mutable pivot_row = 0
+    let mutable pivot_cols = []
+    let col_to_pivot_row = Array.make(B, -1)
+    
+    for c in 0..B:
+      if pivot_row >= L | break
+      
+      let mutable sel = -1
+      for r in pivot_row..L:
+        if M[r][c] == 1
+        | sel := r
+          break
+          
+      if sel == -1 | continue
+      
+      let temp = M[pivot_row]
+      M[pivot_row] := M[sel]
+      M[sel] := temp
+      
+      for r in 0..L:
+        if r != pivot_row && M[r][c] == 1
+        | for k in c..(B+1):
+            M[r][k] := (M[r][k] + M[pivot_row][k]) rem 2
+            
+      pivot_cols := pivot_cols.append([c])
+      col_to_pivot_row[c] := pivot_row
+      pivot_row := pivot_row + 1
+      
+    let mutable free_cols = []
+    for c in 0..B:
+      let mutable is_pivot = #false
+      for p in pivot_cols:
+        if p == c | is_pivot := #true
+      if !is_pivot | free_cols := free_cols.append([c])
+      
+    let num_free = free_cols.length()
+    let combinations = pow2(num_free)
+    
+    let mutable min_presses = 1000000000
+    
+    for i in 0..combinations:
+      let x = Array.make(B, 0)
+      let mutable current_presses = 0
+      
+      for k in 0..num_free:
+        if (i div pow2(k)) rem 2 != 0
+        | x[free_cols[k]] := 1
+          current_presses := current_presses + 1
+          
+      for p_col in pivot_cols:
+        let r = col_to_pivot_row[p_col]
+        let mutable val = M[r][B]
+        for f_col in free_cols:
+          if M[r][f_col] == 1 && x[f_col] == 1
+          | val := (val + 1) rem 2
+        x[p_col] := val
+        if val == 1 | current_presses := current_presses + 1
+        
+      if current_presses < min_presses
+      | min_presses := current_presses
+        
+    min_presses
+
+fun solve_part2(line :: String) :: Int:
+  block:
+    let mutable start_brace = 0
+    let mutable end_brace = 0
+    
+    for i in 0..line.length():
+      if line[i] == "{"[0] | start_brace := i
+      if line[i] == "}"[0] | end_brace := i
+      
+    if start_brace == end_brace | return 0
+    
+    let target_str = line.substring(start_brace + 1, end_brace)
+    let target_parts = target_str.split(",")
+    let L = target_parts.length()
+    let b_vec = Array.make(L, 0)
+    for i in 0..L:
+      b_vec[i] := Int.parse(target_parts[i])
+      
+    let mutable buttons = []
+    let parts = line.split("(")
+    
+    for i in 1..parts.length():
+      let p = parts[i]
+      let mutable end_paren = -1
+      for j in 0..p.length():
+        if p[j] == ")"[0] | end_paren := j
+        
+      if end_paren != -1
+      | let nums_str = p.substring(0, end_paren)
+        let b = Array.make(L, 0)
+        let nums = nums_str.split(",")
+        for n_str in nums:
+          let n = try: Int.parse(n_str) catch: -1
+          if n >= 0 && n < L | b[n] := 1
+        buttons := buttons.append([b])
+        
+    let B = buttons.length()
+    
+    let M = Array.make(L, fun (r): Array.make(B + 1, 0.0))
+    for r in 0..L:
+      for c in 0..B:
+        M[r][c] := buttons[c][r] * 1.0
+      M[r][B] := b_vec[r] * 1.0
+      
+    let mutable pivot_row = 0
+    let mutable pivot_cols = []
+    let col_to_pivot_row = Array.make(B, -1)
+    
+    for c in 0..B:
+      if pivot_row >= L | break
+      
+      let mutable sel = -1
+      for r in pivot_row..L:
+        if M[r][c].abs() > 1.0e-9
+        | sel := r
+          break
+          
+      if sel == -1 | continue
+      
+      let temp = M[pivot_row]
+      M[pivot_row] := M[sel]
+      M[sel] := temp
+      
+      let pivot_val = M[pivot_row][c]
+      for k in c..(B+1):
+        M[pivot_row][k] := M[pivot_row][k] / pivot_val
+        
+      for r in 0..L:
+        if r != pivot_row && M[r][c].abs() > 1.0e-9
+        | let factor = M[r][c]
+          for k in c..(B+1):
+            M[r][k] := M[r][k] - factor * M[pivot_row][k]
+            
+      pivot_cols := pivot_cols.append([c])
+      col_to_pivot_row[c] := pivot_row
+      pivot_row := pivot_row + 1
+      
+    let mutable consistent = #true
+    for r in pivot_row..L:
+      if M[r][B].abs() > 1.0e-9 | consistent := #false
+      
+    if !consistent | return 0
+    
+    let mutable free_cols = []
+    for c in 0..B:
+      let mutable is_pivot = #false
+      for p in pivot_cols:
+        if p == c | is_pivot := #true
+      if !is_pivot | free_cols := free_cols.append([c])
+      
+    let ubs = Array.make(B, 0)
+    for c in 0..B:
+      let mutable min_ub = 1000000000
+      let mutable bounded = #false
+      for r in 0..L:
+        if buttons[c][r] > 0
+        | let val = (b_vec[r] / buttons[c][r]).floor()
+          if val < min_ub | min_ub := val
+          bounded := #true
+      if bounded | ubs[c] := min_ub
+      
+    let mutable min_total_presses = 1000000000
+    let mutable found = #false
+    let current_free_vals = Array.make(free_cols.length(), 0)
+    
+    fun search(free_idx):
+      if free_idx == free_cols.length()
+      | let mutable current_presses = 0
+        for v in current_free_vals:
+          current_presses := current_presses + v
+          
+        let mutable possible = #true
+        for p_col in pivot_cols:
+          let r = col_to_pivot_row[p_col]
+          let mutable val = M[r][B]
+          for j in 0..free_cols.length():
+            let f_col = free_cols[j]
+            val := val - M[r][f_col] * current_free_vals[j]
+            
+          if val < -1.0e-9 | possible := #false
+          else
+            let long_val = val.round()
+            if (val - long_val).abs() > 1.0e-9 | possible := #false
+            else
+              current_presses := current_presses + long_val.to_int()
+              
+        if possible
+        | if current_presses < min_total_presses
+          | min_total_presses := current_presses
+            found := #true
+      else
+        let f_col_idx = free_cols[free_idx]
+        let limit = ubs[f_col_idx]
+        for val in 0..(limit + 1):
+          current_free_vals[free_idx] := val
+          search(free_idx + 1)
+          
+    search(0)
+    
+    if found | min_total_presses
+    else | 0
+
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  let input_str =
+    try:
+      let p = Port.Input.open_file("input.txt")
+      let s = p.read_string()
+      p.close()
+      s
+    catch:
+      ""
+      
+  if input_str == ""
+  | println("Error reading input.txt")
+    return
 
-  // Part 1
-  def part1 = 0
-  println("Day 10 Part 1: " ++ to_string(part1))
+  let lines = input_str.split("\n")
+  let mutable total_presses_part1 = 0
+  let mutable total_presses_part2 = 0
+  
+  for line in lines:
+    if line.trim() != ""
+    | total_presses_part1 := total_presses_part1 + solve_machine(line)
+      total_presses_part2 := total_presses_part2 + solve_part2(line)
 
-  // Part 2
-  def part2 = 0
-  println("Day 10 Part 2: " ++ to_string(part2))
+  println("Day 10 Part 1: " + to_string(total_presses_part1))
+  println("Day 10 Part 2: " + to_string(total_presses_part2))
 
 main()
