@@ -1,14 +1,51 @@
-#lang rhombus/static
+#lang rhombus
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
+
+  def mutable graph = {}
+
+  for (line in lines):
+    when line.length() > 0
+    | def parts = line.split(":")
+      def source = parts[0].trim()
+      def dest_str = parts[1].trim()
+      def destinations = dest_str.split(" ")
+      graph := graph ++ {source: destinations}
+
+  fun count_paths(current, target):
+    if current == target
+    | 1
+    | if graph.has_key(current)
+      | def neighbors = graph[current]
+        def mutable count = 0
+        for (neighbor in neighbors):
+          count := count + count_paths(neighbor, target)
+        count
+      | 0
+
+  fun count_paths_with_required(current, target, fft_seen, dac_seen):
+    def new_fft_seen = fft_seen || (current == "fft")
+    def new_dac_seen = dac_seen || (current == "dac")
+
+    if current == target
+    | if new_fft_seen && new_dac_seen
+      | 1
+      | 0
+    | if graph.has_key(current)
+      | def neighbors = graph[current]
+        def mutable count = 0
+        for (neighbor in neighbors):
+          count := count + count_paths_with_required(neighbor, target, new_fft_seen, new_dac_seen)
+        count
+      | 0
 
   // Part 1
-  def part1 = 0
+  def part1 = count_paths("you", "out")
   println("Day 11 Part 1: " ++ to_string(part1))
 
-  // Part 2
-  def part2 = 0
+  // Part 2: paths from svr to out that visit both dac and fft
+  def part2 = count_paths_with_required("svr", "out", #false, #false)
   println("Day 11 Part 2: " ++ to_string(part2))
 
 main()

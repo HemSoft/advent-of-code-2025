@@ -1,13 +1,79 @@
 #lang rhombus/static
 
-fun main():
-  def input = filesystem.read_file("input.txt").trim()
+fun parse_input(path :: String):
+  def lines = filesystem.read_lines(path)
 
-  // Part 1
-  def part1 = 0
+  def mutable shape_sizes = HashEqTable()
+  def mutable region_lines = MutableVector()
+
+  def mutable current_shape_id = -1
+  def mutable current_shape_count = 0
+
+  for (raw_line in lines):
+    def line = raw_line.trim_trailing("\r")
+
+    when line.trim() == ""
+    | continue
+
+    def first = if line.length() > 0 | line.substring(0, 1) | ""
+    def is_shape_header =
+      first.length() == 1 && first[0].is_digit() && line.contains(":") && !line.contains("x")
+
+    if is_shape_header
+    | when current_shape_id >= 0
+      | shape_sizes[current_shape_id] := current_shape_count
+    | def id_part = line.split(":")[0]
+      current_shape_id := id_part.to_int()
+      current_shape_count := 0
+    | when line.contains("x") && line.contains(":")
+      | when current_shape_id >= 0
+        | shape_sizes[current_shape_id] := current_shape_count
+        | current_shape_id := -1
+        | current_shape_count := 0
+      | region_lines.append(line.trim())
+    | when current_shape_id >= 0 && (line.contains("#") || line.contains("."))
+      | current_shape_count := current_shape_count + line.count("#")
+
+  when current_shape_id >= 0
+  | shape_sizes[current_shape_id] := current_shape_count
+
+  values(shape_sizes.immutable(), region_lines.immutable())
+
+fun solve_part1(path :: String):
+  def values(shape_sizes, region_lines) = parse_input(path)
+
+  def mutable count_fit = 0
+
+  for (region_line in region_lines):
+    def parts = region_line.split(":", 2)
+    def size_part = parts[0].trim()
+    def counts_part = parts[1].trim()
+
+    def size_parts = size_part.split("x")
+    def width = size_parts[0].to_int()
+    def height = size_parts[1].to_int()
+
+    def count_strings = counts_part.split(" ")
+    def mutable total_cells_needed = 0
+
+    for (idx :: Int = 0; idx < count_strings.length(); idx := idx + 1):
+      def s = count_strings[idx]
+      def c = s.to_int()
+      when c == 0
+      | continue
+      def size = shape_sizes.get(idx, 0)
+      total_cells_needed := total_cells_needed + c * size
+
+    def grid_area = width * height
+    when total_cells_needed <= grid_area
+    | count_fit := count_fit + 1
+
+  count_fit
+
+fun main():
+  def part1 = solve_part1("input.txt")
   println("Day 12 Part 1: " ++ to_string(part1))
 
-  // Part 2
   def part2 = 0
   println("Day 12 Part 2: " ++ to_string(part2))
 

@@ -1,14 +1,244 @@
 #lang rhombus/static
 
-fun main():
-  def input = filesystem.read_file("input.txt").trim()
+import:
+    rhombus/io
+    rhombus/file
 
-  // Part 1
-  def part1 = 0
-  println("Day 12 Part 1: " ++ to_string(part1))
+class Point(r, c):
+    nonfinal
 
-  // Part 2
-  def part2 = 0
-  println("Day 12 Part 2: " ++ to_string(part2))
+def input_file = "input.txt"
+def content = file.read_string(input_file)
+def parts = String.split(content.replace("\r\n", "\n"), "\n\n")
 
-main()
+def shapes = MutableMap()
+def regions = MutableList()
+
+fun parse_shape(lines):
+    def header = lines[0].trim().trim_suffix(":")
+    def id = header.to_int()
+    def points = MutableSet()
+
+    fun loop_r(r):
+        if r < lines.length()
+        | def line = lines[r]
+          fun loop_c(c):
+              if c < line.length()
+              | if line[c] == "#"
+                | points.add(Point(r-1, c))
+                loop_c(c+1)
+              | loop_c(c+1)
+          loop_c(0)
+          loop_r(r+1)
+        | #void
+    loop_r(1)
+
+    shapes[id] = generate_variations(points)
+
+fun parse_region(line):
+    def p = String.split(line, ":")
+    def dims = String.split(p[0], "x")
+    def w = dims[0].to_int()
+    def h = dims[1].to_int()
+    def counts = MutableList()
+
+    def parts = String.split(p[1].trim(), " ")
+    fun loop_s(i):
+        if i < parts.length()
+        | def s = parts[i]
+          if s != ""
+          | counts.add(s.to_int())
+          loop_s(i+1)
+        | #void
+    loop_s(0)
+
+    regions.add({ "w": w, "h": h, "counts": counts })
+
+fun generate_variations(original):
+    def variations = MutableList()
+    def seen = MutableSet()
+    def current = original
+
+    fun loop_i(i):
+        if i < 2
+        | fun loop_j(j):
+              if j < 4
+              | def normalized = normalize(current)
+                def key = points_to_string(normalized)
+                if !seen.has(key)
+                | variations.add(normalized)
+                  seen.add(key)
+                current = rotate(current)
+                loop_j(j+1)
+              | #void
+          loop_j(0)
+          current = flip(original)
+          loop_i(i+1)
+        | #void
+    loop_i(0)
+    variations
+
+fun rotate(points):
+    def new_points = MutableSet()
+    points.each(fun (p):
+        new_points.add(Point(p.c, -p.r)))
+    new_points
+
+fun flip(points):
+    def new_points = MutableSet()
+    points.each(fun (p):
+        new_points.add(Point(p.r, -p.c)))
+    new_points
+
+fun normalize(points):
+    if points.length() == 0
+    | []
+    | def min_r = 1000000
+      def min_c = 1000000
+      for (p: points):
+          if p.r < min_r | min_r = p.r
+          if p.c < min_c | min_c = p.c
+      def res = MutableList()
+      for (p: points):
+          res.add(Point(p.r - min_r, p.c - min_c))
+      res.sort(fun (a, b):
+          if a.r != b.r
+          | a.r < b.r
+          | a.c < b.c)
+      res
+
+fun points_to_string(points):
+    def sb = MutableString()
+    points.each(fun (p):
+        sb.append(to_string(p.r) + "," + to_string(p.c) + ";"))
+    sb.to_string()
+
+fun solve_region(region, shapes):
+    def presents = MutableList()
+    def total_area = 0
+
+    fun loop_i(i):
+        if i < region["counts"].length()
+        | def count = region["counts"][i]
+          fun loop_j(j):
+              if j < count
+              | presents.add(i)
+                total_area = total_area + shapes[i][0].length()
+                loop_j(j+1)
+              | #void
+          loop_j(0)
+          loop_i(i+1)
+        | #void
+    loop_i(0)
+
+    if total_area > region["w"] * region["h"]
+    | #false
+    | def max_skips = region["w"] * region["h"] - total_area
+      def grid = MutableSet()
+      def present_types_set = MutableSet()
+      presents.each(fun (p):
+          present_types_set.add(p))
+      def present_types = MutableList()
+      present_types_set.each(fun (p):
+          present_types.add(p))
+      present_types.sort(fun (a, b): shapes[b][0].length() < shapes[a][0].length())
+
+      def counts = MutableMap()
+      presents.each(fun (p):
+          if !counts.has(p) | counts[p] = 0
+          counts[p] = counts[p] + 1)
+
+      def anchored_shapes = MutableMap()
+      present_types.each(fun (type_id):
+          def list = MutableList()
+          shapes[type_id].each(fun (v):
+              def anchor = v[0]
+              def points = MutableList()
+              v.each(fun (p):
+                  points.add(Point(p.r - anchor.r, p.c - anchor.c)))
+              list.add(points))
+          anchored_shapes[type_id] = list)
+
+      def ctx = {
+          "w": region["w"],
+          "h": region["h"],
+          "counts": counts,
+          "types": present_types,
+          "anchored_shapes": anchored_shapes
+      }
+
+      backtrack(0, grid, ctx, max_skips)
+
+fun backtrack(idx, grid, ctx, skips_left):
+    if idx == ctx["w"] * ctx["h"]
+    | def all_zero = #true
+      for (k, v): ctx["counts"]:
+          if v > 0 | all_zero = #false
+      all_zero
+    | if grid.has(idx)
+      | backtrack(idx + 1, grid, ctx, skips_left)
+      | def r = idx div ctx["w"]
+        def c = idx mod ctx["w"]
+        def found = #false
+
+        fun loop_types(ti):
+            if !found && ti < ctx["types"].length()
+            | def type_id = ctx["types"][ti]
+              if ctx["counts"][type_id] > 0
+              | def variations = ctx["anchored_shapes"][type_id]
+                fun loop_vars(vi):
+                    if !found && vi < variations.length()
+                    | def shape = variations[vi]
+                      def fits = #true
+                      shape.each(fun (pt):
+                          def pr = r + pt.r
+                          def pc = c + pt.c
+                          if pr < 0 || pr >= ctx["h"] || pc < 0 || pc >= ctx["w"]
+                          | fits = #false
+                          | if grid.has(pr * ctx["w"] + pc)
+                            | fits = #false)
+                      if fits
+                      | shape.each(fun (pt):
+                            grid.add((r + pt.r) * ctx["w"] + (c + pt.c)))
+                        ctx["counts"][type_id] = ctx["counts"][type_id] - 1
+                        if backtrack(idx + 1, grid, ctx, skips_left)
+                        | found = #true
+                        | ctx["counts"][type_id] = ctx["counts"][type_id] + 1
+                          shape.each(fun (pt):
+                              grid.remove((r + pt.r) * ctx["w"] + (c + pt.c)))
+                          loop_vars(vi+1)
+                      | loop_vars(vi+1)
+                    | #void
+                loop_vars(0)
+                loop_types(ti+1)
+              | loop_types(ti+1)
+            | #void
+        loop_types(0)
+
+        if found
+        | #true
+        | if skips_left > 0
+          | grid.add(idx)
+            def res = backtrack(idx + 1, grid, ctx, skips_left - 1)
+            grid.remove(idx)
+            res
+          | #false
+
+parts.each(fun (part):
+    def lines = String.split(part.trim(), "\n")
+    if lines.length() > 0
+    | if lines[0].contains(":")
+      | if lines[0].contains("x")
+        | lines.each(fun (line):
+            if line.trim() != ""
+            | parse_region(line))
+        | parse_shape(lines))
+
+def solved_count = 0
+regions.each(fun (region):
+    if solve_region(region, shapes)
+    | solved_count = solved_count + 1)
+
+println("Day 12 Part 1: " ++ to_string(solved_count))
+// println("Day 12 Part 2: 0")
+

@@ -1,14 +1,57 @@
 #lang rhombus/static
 
 fun main():
-  def input = filesystem.read_file("input.txt").trim()
+  def lines = filesystem.read_lines("input.txt")
 
-  // Part 1
-  def part1 = 0
-  println("Day 11 Part 1: " ++ to_string(part1))
+  def graph = MutableMap{}
+  def memo1 = MutableMap{}
+  def memo2 = MutableMap{}
 
-  // Part 2
-  def part2 = 0
-  println("Day 11 Part 2: " ++ to_string(part2))
+  for (line in lines):
+    when line.trim() != ""
+    | let parts = line.split(": ")
+      let source = parts[0]
+      let targets = parts[1].split(" ")
+      graph[source] := targets
+
+  fun count_paths_p1(current):
+    if current == "out"
+    | 1
+    | if memo1.has_key(current)
+      | memo1[current]
+      | if !graph.has_key(current)
+        | 0
+        | def mutable total = 0
+          let neighbors = graph[current]
+          for (neighbor in (neighbors :: List)):
+            total := total + count_paths_p1(neighbor)
+          memo1[current] := total
+          total
+
+  println("Day 11 Part 1: " ++ to_string(count_paths_p1("you")))
+
+  fun count_paths_p2(current, mask):
+    def mutable new_mask = mask
+    if current == "dac"
+    | new_mask := new_mask bits.or 1
+    | if current == "fft"
+      | new_mask := new_mask bits.or 2
+      | #void
+
+    if current == "out"
+    | if new_mask == 3 | 1 | 0
+    | let key = current ++ "-" ++ to_string(new_mask)
+      if memo2.has_key(key)
+      | memo2[key]
+      | if !graph.has_key(current)
+        | 0
+        | def mutable total = 0
+          let neighbors = graph[current]
+          for (neighbor in (neighbors :: List)):
+            total := total + count_paths_p2(neighbor, new_mask)
+          memo2[key] := total
+          total
+
+  println("Day 11 Part 2: " ++ to_string(count_paths_p2("svr", 0)))
 
 main()
